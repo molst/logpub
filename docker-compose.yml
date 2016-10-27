@@ -1,0 +1,8 @@
+version: '2'
+services:
+  logpub:
+    build: .
+    ports:
+      - "80:4442"
+    volumes:
+      - /var/log:/usr/hostmirror/var/log
