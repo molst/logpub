@@ -27,15 +27,15 @@
         file (contained-files-newer-than (io/file base-uri) week-in-millis)]
     (.getPath file)))
 
-(defn wipe-prefix [strings prefix]
+(defn replace-prefix [strings prefix replacement]
   (for [s strings]
-    (clojure.string/replace s prefix "")))
+    (clojure.string/replace s prefix replacement)))
 
 (defroutes router
   (GET "/logs" []
        (-> log-location
            filter-dirs
-           (wipe-prefix log-location)
+           (replace-prefix log-location "logs/")
            pprint
            with-out-str))
   (GET "/logs/:file-ref{.+}" [file-ref]
