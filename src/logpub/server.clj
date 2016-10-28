@@ -3,6 +3,7 @@
   (:require
    [compojure.core :refer :all]
    [ring.adapter.jetty :as r]
+   [ring.util.response :refer [response file-response]]
    [clojure.java.io :as io]
    [clojure.pprint :refer [pprint]]))
 
@@ -18,6 +19,7 @@
           (file-seq dir)))
 
 (def week-in-millis 604800000)
+(def log-location "/usr/hostmirror/var/log/")
 
 (defn filter-dirs
   [& base-uris]
@@ -25,11 +27,23 @@
         file (contained-files-newer-than (io/file base-uri) week-in-millis)]
     (.getPath file)))
 
+(defn wipe-prefix [strings prefix]
+  (for [s strings]
+    (clojure.string/replace s prefix "")))
+
 (defroutes router
-  (GET "/logs" [] (-> "/usr/hostmirror/var/log"
-                      filter-dirs
-                      pprint
-                      with-out-str)))
+  (GET "/logs" []
+       (-> log-location
+           filter-dirs
+           (wipe-prefix log-location)
+           pprint
+           with-out-str))
+  (GET "/logs/:file-ref{.+}" [file-ref]
+       (let [file (io/file (str log-location file-ref))]
+         (if (.exists file)
+           (file-response (str log-location file-ref))
+           {:status 404
+            :body "file not found"}))))
 
 (defn -main []
   (r/run-jetty #'router {:port 4442}))
